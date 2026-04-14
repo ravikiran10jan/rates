@@ -58,14 +58,34 @@ function priceToDF(inst: CurveInstrument, tStart: number, tEnd: number, curve: B
   // Par swap / OIS / XCCY basis (approximated as par swap against the same curve):
   //   fixed leg PV = r * Σ τᵢ * DF(tᵢ)
   //   float leg PV = DF(t0) - DF(tN)  (assuming float leg prices at par when discounted on same curve)
-  //   par: r * Σ τᵢ DF(tᵢ) = DF(t0) - DF(tN)   =>  DF(tN) = DF(t0) - r*(Σ_{i<N} τᵢ DF(tᵢ))  / (1 + r τ_N)
+  //   par: r * Σ τᵢ DF(tᵢ) = DF(t0) - DF(tN)   =>  DF(tN) = (DF(t0) - r*Σ_{i<N} τᵢ DF(tᵢ))  / (1 + r τ_N)
   if (inst.kind === 'SWAP' || inst.kind === 'OIS' || inst.kind === 'XCCY_BASIS') {
-    const n = Math.max(1, Math.round(tEnd - tStart));
+    // Build annual fixed-leg pillars ending exactly at tEnd. Any leading short stub
+    // (when tEnd - tStart is not an integer number of years) is placed at the front.
+    const length = tEnd - tStart;
+    const nFull = Math.max(0, Math.floor(length + 1e-9));
     const steps: number[] = [];
-    for (let i = 1; i <= n; i++) steps.push(tStart + i);
+    const taus: number[] = [];
+    let prev = tStart;
+    // Leading short stub, if any
+    const stub = length - nFull;
+    if (stub > 1e-9) {
+      steps.push(tStart + stub);
+      taus.push(stub);
+      prev = tStart + stub;
+    }
+    for (let i = 1; i <= nFull; i++) {
+      const nextT = prev + 1;
+      steps.push(nextT);
+      taus.push(1);
+      prev = nextT;
+    }
+    if (steps.length === 0) {
+      // Degenerate: zero-length instrument, treat like DF=1
+      return 1;
+    }
     const dfStart = interpolateDF(curve, tStart);
     let accrSum = 0;
-    const taus = steps.map((t, i) => (i === 0 ? (t - tStart) : 1));
     for (let i = 0; i < steps.length - 1; i++) {
       accrSum += taus[i] * interpolateDF(curve, steps[i]);
     }

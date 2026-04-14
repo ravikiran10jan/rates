@@ -48,6 +48,38 @@ function sign(leg: Leg): 1 | -1 {
   return leg.payerReceiver === 'RECEIVE' ? 1 : -1;
 }
 
+function notionalExchangeFlows(
+  leg: Leg,
+  valuationDate: string,
+  discountCurve: BuiltCurve,
+  s: 1 | -1,
+): CashflowProjection[] {
+  const flows: CashflowProjection[] = [];
+  const cpd = leg.calculationPeriodDates;
+  if (leg.initialExchange) {
+    const n0 = notionalAt(leg, cpd.effectiveDate);
+    const df = interpolateDF(discountCurve, t(valuationDate, cpd.effectiveDate));
+    flows.push({
+      periodStart: cpd.effectiveDate, periodEnd: cpd.effectiveDate, paymentDate: cpd.effectiveDate,
+      notional: n0, rate: 0, yearFraction: 0,
+      // Initial exchange: receiver of the leg pays notional at start (opposite sign)
+      amount: -n0, discountFactor: df,
+      presentValue: -s * n0 * df, sign: s,
+    });
+  }
+  if (leg.finalExchange) {
+    const nN = notionalAt(leg, cpd.terminationDate);
+    const df = interpolateDF(discountCurve, t(valuationDate, cpd.terminationDate));
+    flows.push({
+      periodStart: cpd.terminationDate, periodEnd: cpd.terminationDate, paymentDate: cpd.terminationDate,
+      notional: nN, rate: 0, yearFraction: 0,
+      amount: nN, discountFactor: df,
+      presentValue: s * nN * df, sign: s,
+    });
+  }
+  return flows;
+}
+
 export function priceFixedLeg(
   leg: FixedLeg,
   valuationDate: string,
@@ -74,6 +106,7 @@ export function priceFixedLeg(
       sign: s,
     };
   });
+  flows.push(...notionalExchangeFlows(leg, valuationDate, discountCurve, s));
   const pv = flows.reduce((acc, f) => acc + f.presentValue, 0);
   return { flows, pv };
 }
@@ -109,6 +142,7 @@ export function priceFloatingLeg(
       sign: s,
     };
   });
+  flows.push(...notionalExchangeFlows(leg, valuationDate, discountCurve, s));
   const pv = flows.reduce((acc, f) => acc + f.presentValue, 0);
   return { flows, pv };
 }

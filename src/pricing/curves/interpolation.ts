@@ -9,7 +9,7 @@ export function interpolateDF(curve: BuiltCurve, t: number): number {
   const p = curve.pillars;
   if (p.length === 0) return 1;
   if (t <= 0) return 1;
-  if (t <= p[0].time) return interpolateSegment(0, t, 0, 1, p[0].time, p[0].df, curve.definition.interpolation);
+  if (t <= p[0].time) return interpolateSegment(0, t, p[0].time, 1, p[0].df, p[0].df, curve.definition.interpolation, 0, p[0].zeroRate);
   if (t >= p[p.length - 1].time) {
     // Flat-forward extrapolation: extend last zero rate
     const last = p[p.length - 1];

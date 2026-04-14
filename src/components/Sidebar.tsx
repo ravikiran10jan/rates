@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { allProductForms, getProductForm, type ProductFormMeta } from './forms/FormRegistry';
+import { allProductForms, type ProductFormMeta } from './forms/FormRegistry';
 import './forms'; // ensure forms register
 import { useBlotter } from '../store/blotterStore';
+import { Trade as TradeSchema } from '../model/trade';
 import type { Trade } from '../model/trade';
 import { buildSampleTrades } from '../samples';
 
@@ -27,8 +28,18 @@ export function Sidebar({ onOpenCurves }: { onOpenCurves: () => void }) {
     const text = await file.text();
     try {
       const parsed = JSON.parse(text);
-      const trades: Trade[] = Array.isArray(parsed) ? parsed : [parsed];
-      importTrades(trades);
+      const raw: unknown[] = Array.isArray(parsed) ? parsed : [parsed];
+      const validated: Trade[] = [];
+      const errors: string[] = [];
+      raw.forEach((item, idx) => {
+        const result = TradeSchema.safeParse(item);
+        if (result.success) validated.push(result.data);
+        else errors.push(`Trade #${idx + 1}: ${result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')}`);
+      });
+      if (errors.length > 0) {
+        alert(`Skipped ${errors.length} invalid trade(s):\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? '\n…' : ''}`);
+      }
+      if (validated.length > 0) importTrades(validated);
     } catch (err) {
       alert('Invalid JSON');
     }
