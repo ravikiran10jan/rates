@@ -3,6 +3,7 @@ import { allProductForms, getProductForm, type ProductFormMeta } from './forms/F
 import './forms'; // ensure forms register
 import { useBlotter } from '../store/blotterStore';
 import type { Trade } from '../model/trade';
+import { buildSampleTrades } from '../samples';
 
 export function Sidebar({ onOpenCurves }: { onOpenCurves: () => void }) {
   const [openForm, setOpenForm] = useState<ProductFormMeta | null>(null);
@@ -66,6 +67,7 @@ export function Sidebar({ onOpenCurves }: { onOpenCurves: () => void }) {
           const a = document.createElement('a');
           a.href = url; a.download = 'trades.json'; a.click(); URL.revokeObjectURL(url);
         }}>Export JSON</button>
+        <button className="btn w-full mt-2" onClick={() => importTrades(buildSampleTrades())}>Load Samples</button>
         <button className="btn btn-danger w-full mt-2" onClick={() => { if (confirm('Clear all trades?')) reset(); }}>Clear Blotter</button>
       </div>
 
