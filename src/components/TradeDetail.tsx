@@ -6,9 +6,10 @@ import { ScheduleView } from './views/ScheduleView';
 import { CashflowsView } from './views/CashflowsView';
 import { PricingView } from './views/PricingView';
 import { DiffView } from './views/DiffView';
+import { LifecycleView } from './views/LifecycleView';
 
-type Tab = 'ECONOMICS' | 'SCHEDULE' | 'CASHFLOWS' | 'PRICING' | 'JSON' | 'XML' | 'DIFF';
-const TABS: Tab[] = ['ECONOMICS', 'SCHEDULE', 'CASHFLOWS', 'PRICING', 'JSON', 'XML', 'DIFF'];
+type Tab = 'ECONOMICS' | 'SCHEDULE' | 'CASHFLOWS' | 'LIFECYCLE' | 'PRICING' | 'JSON' | 'XML' | 'DIFF';
+const TABS: Tab[] = ['ECONOMICS', 'SCHEDULE', 'CASHFLOWS', 'LIFECYCLE', 'PRICING', 'JSON', 'XML', 'DIFF'];
 
 export function TradeDetail() {
   const id = useBlotter((s) => s.selectedTradeId);
@@ -32,6 +33,7 @@ export function TradeDetail() {
         {tab === 'ECONOMICS' && <EconomicsView trade={trade} />}
         {tab === 'SCHEDULE' && <ScheduleView trade={trade} />}
         {tab === 'CASHFLOWS' && <CashflowsView trade={trade} />}
+        {tab === 'LIFECYCLE' && <LifecycleView trade={trade} />}
         {tab === 'PRICING' && <PricingView trade={trade} />}
         {tab === 'JSON' && <JsonView trade={trade} />}
         {tab === 'XML' && <XmlView trade={trade} />}

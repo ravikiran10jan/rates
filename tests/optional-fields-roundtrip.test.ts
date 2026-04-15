@@ -5,6 +5,7 @@ import { vanillaIrsSample } from '../src/components/forms/VanillaIrsForm';
 import { capFloorSample } from '../src/components/forms/CapFloorForm';
 import type { FloatingLeg } from '../src/model/common';
 import type { Trade } from '../src/model/trade';
+import { Trade as TradeSchema } from '../src/model/trade';
 import type { CapFloor, VanillaIrs } from '../src/model/products';
 
 describe('JSON↔XML round-trip preserves optional fields', () => {
@@ -22,11 +23,11 @@ describe('JSON↔XML round-trip preserves optional fields', () => {
         settlementCurrency: 'USD',
       },
     };
-    const trade: Trade = {
+    const trade: Trade = TradeSchema.parse({
       ...base,
       tradeHeader: { ...base.tradeHeader, portfolio: 'RATES-BOOK-01' },
       product: { productType: 'VANILLA_IRS', legs: [product.legs[0], float] },
-    };
+    });
 
     const xml = tradeToXml(trade);
     const back = xmlToTrade(xml);
@@ -43,7 +44,7 @@ describe('JSON↔XML round-trip preserves optional fields', () => {
   it('preserves CAP_FLOOR.floorStrike and premium when present (collar)', () => {
     const base = capFloorSample();
     const product = base.product as CapFloor;
-    const trade: Trade = {
+    const trade: Trade = TradeSchema.parse({
       ...base,
       product: {
         ...product,
@@ -51,7 +52,7 @@ describe('JSON↔XML round-trip preserves optional fields', () => {
         floorStrike: 0.02,
         premium: { amount: 150_000, currency: product.notional.currency },
       },
-    };
+    });
     const xml = tradeToXml(trade);
     const back = xmlToTrade(xml);
     expect(back).toEqual(trade);

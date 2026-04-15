@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { tradeToXml } from '../src/transform/jsonToXml';
 import { xmlToTrade } from '../src/transform/xmlToJson';
+import { Trade as TradeSchema } from '../src/model/trade';
 import { vanillaIrsSample } from '../src/components/forms/VanillaIrsForm';
 import { ndirsSample } from '../src/components/forms/NdirsForm';
 import { oisSample } from '../src/components/forms/OisForm';
@@ -30,7 +31,9 @@ const samples = {
 describe('JSON↔XML round-trip', () => {
   for (const [name, sample] of Object.entries(samples)) {
     it(`round-trips ${name}`, () => {
-      const original = sample();
+      // Normalise the raw sample through TradeSchema so schema defaults
+      // (e.g. lifecycleEvents: []) are populated before we diff.
+      const original = TradeSchema.parse(sample());
       const xml = tradeToXml(original);
       const back = xmlToTrade(xml);
       expect(back).toEqual(original);

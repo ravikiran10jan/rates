@@ -3,6 +3,7 @@
 // that exercise the discriminated-union `features` schema.
 
 import { Trade } from '../model/trade';
+import type { LifecycleEvent } from '../model/lifecycle';
 import type {
   StructuredIrs,
   StructuredFeature,
@@ -55,11 +56,42 @@ function makeStructuredVariant(args: {
   };
 }
 
+function withLifecycleEvents(t: Trade, events: LifecycleEvent[]): Trade {
+  return { ...t, lifecycleEvents: [...(t.lifecycleEvents ?? []), ...events] };
+}
+
 export function buildSampleTrades(): Trade[] {
   const samples: Trade[] = [];
 
   // ---- Standard vanilla samples ----
-  samples.push(withTradeId(vanillaIrsSample(), 'SAMPLE-IRS-001', 'USD 10MM 5Y vanilla IRS'));
+  const irs = withLifecycleEvents(
+    withTradeId(vanillaIrsSample(), 'SAMPLE-IRS-001', 'USD 10MM 5Y vanilla IRS'),
+    [
+      {
+        eventId: 'EV-IRS-FIX-1',
+        eventType: 'RATE_FIXING',
+        timestamp: '2025-01-15T09:00:00.000Z',
+        recordedBy: 'ops-bot',
+        fixingDate: '2025-01-15',
+        legIndex: 1,
+        indexName: 'USD-SOFR',
+        fixedRate: 0.0432,
+        periodStart: '2025-01-15',
+        periodEnd: '2025-04-15',
+      },
+      {
+        eventId: 'EV-IRS-PAY-1',
+        eventType: 'PAYMENT',
+        timestamp: '2025-04-15T10:30:00.000Z',
+        recordedBy: 'settle-bot',
+        paymentDate: '2025-04-15',
+        legIndex: 0,
+        amount: { amount: 125_000, currency: 'USD' },
+        direction: 'PAY',
+      },
+    ],
+  );
+  samples.push(irs);
   samples.push(withTradeId(oisSample(), 'SAMPLE-OIS-001', 'USD 25MM 2Y OIS vs SOFR'));
   samples.push(withTradeId(xccySample(), 'SAMPLE-XCCY-001', 'USD/EUR 5Y xccy basis'));
   samples.push(withTradeId(ndXccySample(), 'SAMPLE-NDXCCY-001', 'USD/INR 3Y ND xccy'));

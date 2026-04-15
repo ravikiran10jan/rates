@@ -10,7 +10,7 @@ export function xmlToTrade(xml: string): Trade {
     parseAttributeValue: false,
     trimValues: true,
     preserveOrder: false,
-    isArray: (name) => name === 'party' || name === 'cashflow' || name === 'item',
+    isArray: (name) => name === 'party' || name === 'cashflow' || name === 'event' || name === 'item',
   });
   const doc = parser.parse(xml);
   const tx = doc?.FpML?.trade;
@@ -31,6 +31,17 @@ export function xmlToTrade(xml: string): Trade {
     ...xmlGenericToJson(c.payload),
   }));
 
+  const lifecycleEvents = (tx.lifecycleEvents?.event ?? []).map((e: any) => {
+    // Prefer the generic payload which carries the full typed object; the
+    // attributes are redundant but provide a cheap fallback.
+    const body = xmlGenericToJson(e.payload) ?? {};
+    return {
+      ...body,
+      eventType: body.eventType ?? e['@_type'],
+      eventId: body.eventId ?? e['@_eventId'],
+    };
+  });
+
   const rebuilt: Trade = {
     tradeHeader: {
       tradeId: strOrEmpty(header.tradeId),
@@ -44,6 +55,7 @@ export function xmlToTrade(xml: string): Trade {
     parties,
     product: product as Trade['product'],
     additionalCashflows: cashflows as Trade['additionalCashflows'],
+    lifecycleEvents: lifecycleEvents as Trade['lifecycleEvents'],
   };
 
   // Validate to catch loss-of-fidelity fast

@@ -57,7 +57,22 @@ function toTradeElement(trade: Trade): any {
         ...cashflowPayload(c),
       })),
     },
+    lifecycleEvents: {
+      event: (trade.lifecycleEvents ?? []).map((e) => ({
+        '@_type': e.eventType,
+        '@_eventId': e.eventId,
+        ...lifecycleEventPayload(e),
+      })),
+    },
   };
+}
+
+function lifecycleEventPayload(e: any): any {
+  // Embed as a generic payload; xmlToJson will invert. Keep eventType/eventId
+  // in attributes for readability but also inside payload so round-trip is
+  // symmetric with other fields.
+  const { ...rest } = e;
+  return { payload: jsonToXmlGeneric(rest) };
 }
 
 function cashflowPayload(c: any): any {
